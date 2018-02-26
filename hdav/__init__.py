@@ -1,0 +1,1 @@
+from .hdav import view
