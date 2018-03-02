@@ -24,7 +24,7 @@ setup(
     ],
     keywords='scientific image',
     packages=find_packages(),
-    install_requires=['gitpython'],
+    install_requires=['numpy', 'PyQt5', 'pyqtgraph'],
     package_data={},
     data_files=[],
 )
