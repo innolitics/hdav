@@ -8,7 +8,7 @@ app = QApplication([])
 windows = {}
 
 
-def view(layers, window_id):
+def view(layers, window_id=0, interactive=False):
     shape = layers[0]['data'].shape
     if not all(layer['data'].shape == shape for layer in layers):
         raise ValueError("All data entries must have the same shape.")
@@ -21,7 +21,10 @@ def view(layers, window_id):
     else:
         raise ValueError("All data entries must have 2 or 3 dimensions.")
     windows[window_id].show()
-    QtGui.QApplication.processEvents()
+    if interactive:
+        QtGui.QApplication.processEvents()
+    else:
+        QtGui.QApplication.exec_()
 
 
 class HdavWindow(QWidget):
