@@ -90,7 +90,7 @@ class HdavWindow2d(HdavWindow):
         for layer in self.layers:
             image = pg.ImageItem(layer['data'])
             if 'cmap' in layer and layer['cmap'] is not None:
-                start, stop = layer['cmap'].pos
+                start, stop = layer['cmap'].pos[0], layer['cmap'].pos[-1]
                 lut = layer['cmap'].getLookupTable(start=start, stop=stop)
                 image.setLookupTable(lut)
             if layer['visible']:
@@ -140,7 +140,7 @@ class HdavWindow3d(HdavWindow):
             image_coronal = pg.ImageItem(coronal)
             image_sagittal = pg.ImageItem(sagittal)
             if 'cmap' in layer and layer['cmap'] is not None:
-                start, stop = layer['cmap'].pos
+                start, stop = layer['cmap'].pos[0], layer['cmap'].pos[-1]
                 lut = layer['cmap'].getLookupTable(start=start, stop=stop)
                 image_axial.setLookupTable(lut)
                 image_coronal.setLookupTable(lut)
