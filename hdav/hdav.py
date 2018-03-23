@@ -15,9 +15,9 @@ def view(layers, window_id=0, interactive=False):
     elif window_id in windows:
         windows[window_id].update_layers(layers)
     elif layers[0]['data'].ndim == 2:
-        windows[window_id] = HdavWindow2d(layers)
+        windows[window_id] = HdavWindow2d(layers, user_keys_callback=user_keys_callback)
     elif layers[0]['data'].ndim == 3:
-        windows[window_id] = HdavWindow3d(layers)
+        windows[window_id] = HdavWindow3d(layers, user_keys_callback=user_keys_callback)
     else:
         raise ValueError("All data entries must have 2 or 3 dimensions.")
     windows[window_id].show()
@@ -40,9 +40,10 @@ class HdavWindow(QWidget):
         QtCore.Qt.Key_9,
     ]
 
-    def __init__(self, layers, **kwargs):
+    def __init__(self, layers, user_keys_callback, **kwargs):
         super().__init__(**kwargs)
         self.layers = layers
+        self.user_keys_callback = user_keys_callback or {}
         self.views = pg.GraphicsLayoutWidget(self)
         self.legend = QTreeWidget()
         self.legend.setFixedWidth(200)
@@ -60,8 +61,12 @@ class HdavWindow(QWidget):
         layout.addWidget(self.views)
 
     def keyPressEvent(self, ev):
-        if ev.key() in HdavWindow.OVERLAY_KEYS:
-            index = HdavWindow.OVERLAY_KEYS.index(ev.key())
+        key = ev.key()
+        if key in self.user_keys_callback:
+            callback = self.user_keys_callback[key]
+            callback()
+        elif key in HdavWindow.OVERLAY_KEYS:
+            index = HdavWindow.OVERLAY_KEYS.index(key)
             if index < len(self.layers):
                 ev.accept()
                 self.layers[index]['visible'] = not self.layers[index]['visible']
@@ -76,8 +81,8 @@ class HdavWindow(QWidget):
 
 
 class HdavWindow2d(HdavWindow):
-    def __init__(self, layers, **kwargs):
-        super().__init__(layers, **kwargs)
+    def __init__(self, layers, *args, **kwargs):
+        super().__init__(layers, *args, **kwargs)
         self.resize(300, 300)
         self.viewbox = HdavViewBox2d(self)
         self.views.addItem(self.viewbox)
@@ -98,8 +103,8 @@ class HdavWindow2d(HdavWindow):
 
 
 class HdavWindow3d(HdavWindow):
-    def __init__(self, layers, **kwargs):
-        super().__init__(layers, **kwargs)
+    def __init__(self, layers, *args, **kwargs):
+        super().__init__(layers, *args, **kwargs)
         self.resize(900, 300)
         self.viewbox_axial = HdavViewBox3d(self, 0, 1, 2)
         self.viewbox_coronal = HdavViewBox3d(self, 0, 2, 1)
