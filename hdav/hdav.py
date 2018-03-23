@@ -8,7 +8,12 @@ app = QApplication([])
 windows = {}
 
 
-def view(layers, window_id=0, interactive=False):
+def view_arrays(arrays, *args, **kwargs):
+    layers = [{'data': array, 'name': str(i), 'visible': True} for i, array in enumerate(arrays)]
+    view(layers, *args, **kwargs)
+
+
+def view(layers, window_id=0, interactive=False, user_keys_callback=None):
     shape = layers[0]['data'].shape
     if not all(layer['data'].shape == shape for layer in layers):
         raise ValueError("All data entries must have the same shape.")

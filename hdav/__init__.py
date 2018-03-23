@@ -1,1 +1,1 @@
-from .hdav import view
+from .hdav import view, view_arrays
