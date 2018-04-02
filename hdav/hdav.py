@@ -13,7 +13,7 @@ def view_arrays(arrays, *args, **kwargs):
     view(layers, *args, **kwargs)
 
 
-def view(layers, window_id=0, interactive=False, user_keys_callback=None):
+def view(layers, window_id=0, interactive=False, user_keys_callback=None, title=None):
     shape = layers[0]['data'].shape
     if not all(layer['data'].shape == shape for layer in layers):
         raise ValueError("All data entries must have the same shape.")
@@ -25,6 +25,8 @@ def view(layers, window_id=0, interactive=False, user_keys_callback=None):
         windows[window_id] = HdavWindow3d(layers, user_keys_callback=user_keys_callback)
     else:
         raise ValueError("All data entries must have 2 or 3 dimensions.")
+    if title is not None:
+        windows[window_id].setWindowTitle(title)
     windows[window_id].show()
     if interactive:
         QtGui.QApplication.processEvents()
