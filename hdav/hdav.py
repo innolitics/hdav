@@ -43,7 +43,35 @@ class HdavWindow(QWidget):
         QtCore.Qt.Key_7,
         QtCore.Qt.Key_8,
         QtCore.Qt.Key_9,
+        QtCore.Qt.Key_A,
+        QtCore.Qt.Key_B,
+        QtCore.Qt.Key_C,
+        QtCore.Qt.Key_D,
+        QtCore.Qt.Key_E,
+        QtCore.Qt.Key_F,
+        QtCore.Qt.Key_G,
+        QtCore.Qt.Key_H,
+        QtCore.Qt.Key_I,
+        QtCore.Qt.Key_J,
+        QtCore.Qt.Key_K,
+        QtCore.Qt.Key_L,
+        QtCore.Qt.Key_M,
+        QtCore.Qt.Key_N,
+        QtCore.Qt.Key_O,
+        QtCore.Qt.Key_P,
+        QtCore.Qt.Key_Q,
+        QtCore.Qt.Key_R,
+        QtCore.Qt.Key_S,
+        QtCore.Qt.Key_T,
+        QtCore.Qt.Key_U,
+        QtCore.Qt.Key_V,
+        QtCore.Qt.Key_W,
+        QtCore.Qt.Key_X,
+        QtCore.Qt.Key_Y,
+        QtCore.Qt.Key_Z,
     ]
+    MAX_LAYER_COUNT = len(OVERLAY_KEYS)
+    OVERLAY_KEY_LABEL = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
     def __init__(self, layers, user_keys_callback, **kwargs):
         super().__init__(**kwargs)
@@ -58,8 +86,8 @@ class HdavWindow(QWidget):
         self.legend.setItemsExpandable(False)
         self.legend.setHeaderHidden(True)
         self.legend.setColumnCount(2)
-        for i, layer in enumerate(layers[:9]):
-            item = QTreeWidgetItem([str(i + 1), layer['name']])
+        for i, layer in enumerate(layers[:self.MAX_LAYER_COUNT]):
+            item = QTreeWidgetItem([self.OVERLAY_KEY_LABEL[i], layer['name']])
             self.legend.addTopLevelItem(item)
         layout = QHBoxLayout(self)
         layout.addWidget(self.legend)
@@ -77,8 +105,19 @@ class HdavWindow(QWidget):
                 self.layers[index]['visible'] = not self.layers[index]['visible']
                 self.draw()
 
+    @property
+    def shape(self):
+        if self.layers:
+            return self.layers[0]['data'].shape
+        else:
+            return None
+
     def update_layers(self, layers):
+        old_shape = self.shape
         self.layers = layers
+        new_shape = self.shape
+        if old_shape != new_shape:
+            self.update_cursor(old_shape, new_shape)
         self.draw()
 
     def draw(self):
@@ -93,6 +132,9 @@ class HdavWindow2d(HdavWindow):
         self.views.addItem(self.viewbox)
 
         self.draw()
+
+    def update_cursor(self, old_shape, new_shape):
+        pass
 
     def draw(self):
         self.viewbox.clear()
@@ -128,14 +170,22 @@ class HdavWindow3d(HdavWindow):
         self.cursor_sagittal_y = pg.InfiniteLine(angle=0, pen=y_pen)
         self.cursor_sagittal_z = pg.InfiniteLine(angle=90, pen=z_pen)
 
-        self.cursor_pos = np.array(layers[0]['data'].shape) / 2
+        self.cursor_pos = np.array(self.shape) / 2
         self.draw()
 
+    def update_cursor(self, old_shape, new_shape):
+        self.set_clipped_cursor(
+            [new_shape[dim] * value / old_shape[dim] for dim, value in enumerate(self.cursor_pos)])
+
     def move_cursor(self, pos):
-        min_pos = np.zeros(3, dtype=int)
-        max_pos = np.array(self.layers[0]['data'].shape) - 1
-        self.cursor_pos = np.maximum(np.minimum(pos, max_pos), min_pos)
+        self.set_clipped_cursor(pos)
         self.draw()
+
+
+    def set_clipped_cursor(self, pos):
+        min_pos = np.zeros(3, dtype=int)
+        max_pos = np.array(self.shape) - 1
+        self.cursor_pos = np.maximum(np.minimum(pos, max_pos), min_pos)
 
     def draw(self):
         self.viewbox_axial.clear()
