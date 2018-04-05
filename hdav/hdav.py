@@ -13,16 +13,17 @@ def view_arrays(arrays, *args, **kwargs):
     view(layers, *args, **kwargs)
 
 
-def view(layers, window_id=0, interactive=False, user_keys_callback=None, title=None, handle_events=True):
+def view(layers, window_id=0, interactive=False, user_keys_callback=None, title=None,
+         legend_width=None, handle_events=True):
     shape = layers[0]['data'].shape
     if not all(layer['data'].shape == shape for layer in layers):
         raise ValueError("All data entries must have the same shape.")
     elif window_id in windows:
         windows[window_id].update_layers(layers)
     elif layers[0]['data'].ndim == 2:
-        windows[window_id] = HdavWindow2d(layers, user_keys_callback=user_keys_callback)
+        windows[window_id] = HdavWindow2d(layers, user_keys_callback=user_keys_callback, legend_width=legend_width)
     elif layers[0]['data'].ndim == 3:
-        windows[window_id] = HdavWindow3d(layers, user_keys_callback=user_keys_callback)
+        windows[window_id] = HdavWindow3d(layers, user_keys_callback=user_keys_callback, legend_width=legend_width)
     else:
         raise ValueError("All data entries must have 2 or 3 dimensions.")
     if title is not None:
@@ -75,13 +76,15 @@ class HdavWindow(QWidget):
     MAX_LAYER_COUNT = len(OVERLAY_KEYS)
     OVERLAY_KEY_LABEL = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-    def __init__(self, layers, user_keys_callback, **kwargs):
+    def __init__(self, layers, user_keys_callback, legend_width, **kwargs):
         super().__init__(**kwargs)
+        if legend_width is None:
+            legend_width = 200
         self.layers = layers
         self.user_keys_callback = user_keys_callback or {}
         self.views = pg.GraphicsLayoutWidget(self)
         self.legend = QTreeWidget()
-        self.legend.setFixedWidth(200)
+        self.legend.setFixedWidth(legend_width)
         self.legend.setRootIsDecorated(False)
         self.legend.setUniformRowHeights(True)
         self.legend.setAllColumnsShowFocus(True)
@@ -255,6 +258,7 @@ class HdavViewBox3d(HdavViewBox):
         self.x_axis = x_axis
         self.y_axis = y_axis
         self.z_axis = z_axis
+        self.sensitivity = 0.0002
 
     def mouseClickEvent(self, ev):
         if ev.button() == QtCore.Qt.LeftButton:
@@ -277,5 +281,6 @@ class HdavViewBox3d(HdavViewBox):
     def wheelEvent(self, ev, axis=None):
         ev.accept()
         cursor_pos = self.hdav_window.cursor_pos.copy()
-        cursor_pos[self.z_axis] += ev.delta()
+        change = ev.delta() * self.sensitivity * self.hdav_window.shape[self.z_axis]
+        cursor_pos[self.z_axis] += change
         self.hdav_window.move_cursor(cursor_pos)
